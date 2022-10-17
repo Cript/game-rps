@@ -4,10 +4,10 @@ import { GameRPS } from "../typechain-types";
 
 
 export async function deployGame() {
-    const GameRPS = await ethers.getContractFactory("GameRPS");
-    const gameRPS = await GameRPS.deploy();
+    const GameRPS = await ethers.getContractFactory("GameRPS")
+    const gameRPS = await GameRPS.deploy()
 
-    return { gameRPS };
+    return { gameRPS }
 }
 
 export async function createGame(gameRPS: GameRPS, creator: SignerWithAddress, addresses: string[]): Promise<string> {

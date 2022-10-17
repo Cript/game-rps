@@ -1,9 +1,9 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
-import { deployGame, createGame, commit, commitAll } from "./helpers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { expect } from "chai"
+import { ethers } from "hardhat"
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers"
+import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs"
+import { deployGame, createGame, commit, commitAll } from "./helpers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 
 const BYTES_32_EMPTY = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -16,7 +16,7 @@ describe("GameRPS", () => {
   const addresses: string[] = []
 
   before(async () => {    
-    [creator, address1, address2, address3] = await ethers.getSigners();
+    [creator, address1, address2, address3] = await ethers.getSigners()
     addresses.push(address1.address)
     addresses.push(address2.address)
     addresses.push(address3.address)
@@ -25,34 +25,30 @@ describe("GameRPS", () => {
   describe("CreateGame", function () {
     describe("Success", () => {
       it("Should emit Create event", async function () {
-        const { gameRPS } = await loadFixture(deployGame);
+        const { gameRPS } = await loadFixture(deployGame)
   
         await expect(gameRPS.createGame(addresses))
           .to.emit(gameRPS, "Create")
-          .withArgs(anyValue, addresses);
-      });
+          .withArgs(anyValue, addresses)
+      })
     })
-
-    describe("Error", () => {
-
-    })
-  });
+  })
   
   describe("Commit", function () {
     describe("Success", () => {
-      it("Should emit Commit event", async function () {
-        const { gameRPS } = await loadFixture(deployGame);
+      it("Should emit Commit event", async () => {
+        const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
   
         await expect(gameRPS.connect(address1).commit(gameId, ethers.utils.randomBytes(32)))
           .to.emit(gameRPS, "Commit")
-          .withArgs(gameId, anyValue)
-      });
+          .withArgs(gameId, address1.address)
+      })
     })
 
     describe("Error", () => {
       it("Should revert if game is not exists", async function () {
-        const { gameRPS } = await loadFixture(deployGame);
+        const { gameRPS } = await loadFixture(deployGame)
 
         await expect(
           gameRPS.commit(ethers.utils.randomBytes(32), ethers.utils.randomBytes(32))
@@ -79,7 +75,7 @@ describe("GameRPS", () => {
         ).revertedWith("Commitment already added")
       })
     })
-  });
+  })
   
   describe("Reveal", function () {
     describe("Success", () => {
@@ -97,7 +93,7 @@ describe("GameRPS", () => {
         await expect(gameRPS.connect(address1).reveal(gameId, choice, blindingFactor))
           .emit(gameRPS, "Reveal")
           .withArgs(gameId, address1.address, 1)
-      });
+      })
     })
 
     describe("Error", () => {
@@ -114,7 +110,7 @@ describe("GameRPS", () => {
       })
 
       it("Should revert if the sender is not a member", async function () {
-        const { gameRPS } = await loadFixture(deployGame);
+        const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
         await commitAll(gameRPS, gameId, [address1, address2, address3])
 
@@ -135,7 +131,7 @@ describe("GameRPS", () => {
       })
       
       it("Should revert if the hash is invalid", async function () {
-        const { gameRPS } = await loadFixture(deployGame);
+        const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
 
         await commitAll(gameRPS, gameId, [address1, address2, address3])
@@ -145,7 +141,7 @@ describe("GameRPS", () => {
         ).revertedWith("Invalid hash")
       })
     })
-  });
+  })
 
   describe("Game", () => {
     describe("Success", () => {

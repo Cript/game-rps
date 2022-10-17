@@ -25,7 +25,7 @@ contract GameRPS is Ownable {
     mapping (bytes32 => Game) games;
 
     modifier gameExists(bytes32 gameId) {
-        require(haveGame(gameId), "Game does not exist");
+        require(games[gameId].creator != address(0), "Game does not exist");
         _;
     }
 
