@@ -4,20 +4,14 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GameRPS is Ownable {
-    event Create(bytes32 gameId, address[] members);
-    event Commit(bytes32 gameId, address player);
+    event Create(bytes32 gameId, address creator);
+    event Join(bytes32 gameId, address player);
     event Reveal(bytes32 gameId, address player, Choice choice);
 
     enum Choice { None, Rock, Paper, Scissors }
 
-    struct PlayerChoice {
-        bytes32 commitment;
-        Choice choice;
-    }
-
     struct Game {
-        address creator;
-        address[] members;
+        address[] players;
         mapping(address => bytes32) commitments;
         mapping(address => Choice) choices;
     }
@@ -25,73 +19,56 @@ contract GameRPS is Ownable {
     mapping (bytes32 => Game) games;
 
     modifier gameExists(bytes32 gameId) {
-        require(games[gameId].creator != address(0), "Game does not exist");
+        require(games[gameId].players.length != 0, "Game does not exist");
         _;
     }
 
     modifier gameMember(bytes32 gameId) {
-        bool isMember = false;
-
-        for (uint i = 0; i < games[gameId].members.length; i++) {
-            if(games[gameId].members[i] == msg.sender) {
-                isMember = true;
-            }
-        }
-
-        require(isMember == true, "Not a member of the game");
+        require(games[gameId].commitments[msg.sender] != "", "Not a member of the game");
         _;
     }
 
-    function createGame(address[] memory members) public {
+    uint8 private maxPlayers = 2;
+
+    function createGame(bytes32 commitment) public {
         bytes32 gameId = sha256(
             abi.encodePacked(
                 msg.sender,
-                block.timestamp,
-                members
+                block.timestamp
             )
         );
 
-        games[gameId].creator = msg.sender;
-        games[gameId].members = members;
+        games[gameId].players.push(msg.sender);
+        games[gameId].commitments[msg.sender] = commitment;
 
         emit Create(
             gameId,
-            members
+            msg.sender
         );
     }
 
-    function haveGame(bytes32 gameId)
-        internal
-        view
-        returns (bool)
-    {
-        return games[gameId].creator != address(0);
-    }
-
-    function commit(bytes32 gameId, bytes32 commitment)
+    function join(bytes32 gameId, bytes32 commitment)
         public 
         gameExists(gameId)
-        gameMember(gameId)
     {
-        require(games[gameId].commitments[msg.sender] == 0, "Commitment already added");
+        require(games[gameId].players.length < maxPlayers, "Maximum players exceeded");
+        require(games[gameId].commitments[msg.sender] == 0, "Already joined");
 
+        games[gameId].players.push(msg.sender);
         games[gameId].commitments[msg.sender] = commitment;
 
-        emit Commit(
+        emit Join(
             gameId,
             msg.sender
         );
     }
 
     function reveal(bytes32 gameId, Choice choice, bytes32 blindingFactor) 
-        public 
+        public
         gameExists(gameId)
         gameMember(gameId)
     {
-        uint membersCount = games[gameId].members.length;
-        for (uint i = 0; i < membersCount; i++) {
-            require(games[gameId].commitments[games[gameId].members[i]] != 0, "Didn't receive all commitments");
-        }
+        require(games[gameId].players.length == maxPlayers, "Didn't receive all commitments");
 
         require(
             keccak256(abi.encodePacked(msg.sender, choice, blindingFactor)) == games[gameId].commitments[msg.sender], 
@@ -108,27 +85,25 @@ contract GameRPS is Ownable {
         view
         gameExists(gameId)
         returns (
-            address,
             address[] memory,
             bytes32[] memory,
             Choice[] memory
         )
     {
-        uint membersCount = games[gameId].members.length;
+        uint membersCount = games[gameId].players.length;
 
         bytes32[] memory commitments = new bytes32[](membersCount);
         for (uint i = 0; i < membersCount; i++) {
-            commitments[i] = games[gameId].commitments[games[gameId].members[i]];
+            commitments[i] = games[gameId].commitments[games[gameId].players[i]];
         }
 
         Choice[] memory choices = new Choice[](membersCount);
         for (uint i = 0; i < membersCount; i++) {
-            choices[i] = games[gameId].choices[games[gameId].members[i]];
+            choices[i] = games[gameId].choices[games[gameId].players[i]];
         }
 
         return (
-            games[gameId].creator,
-            games[gameId].members,
+            games[gameId].players,
             commitments,
             choices
         );
