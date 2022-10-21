@@ -22,9 +22,9 @@ describe("GameRPS", () => {
     addresses.push(address3.address)
   })
 
-  describe("CreateGame", function () {
+  describe("CreateGame", () => {
     describe("Success", () => {
-      it("Should emit Create event", async function () {
+      it("Should emit Create event", async () => {
         const { gameRPS } = await loadFixture(deployGame)
   
         await expect(gameRPS.createGame(addresses))
@@ -34,7 +34,7 @@ describe("GameRPS", () => {
     })
   })
   
-  describe("Commit", function () {
+  describe("Commit", () => {
     describe("Success", () => {
       it("Should emit Commit event", async () => {
         const { gameRPS } = await loadFixture(deployGame)
@@ -47,7 +47,7 @@ describe("GameRPS", () => {
     })
 
     describe("Error", () => {
-      it("Should revert if game is not exists", async function () {
+      it("Should revert if game is not exists", async () => {
         const { gameRPS } = await loadFixture(deployGame)
 
         await expect(
@@ -55,7 +55,7 @@ describe("GameRPS", () => {
         ).revertedWith("Game does not exist")
       })
 
-      it("Should revert if user is not a member", async function () {
+      it("Should revert if user is not a member", async () => {
         const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
 
@@ -64,7 +64,7 @@ describe("GameRPS", () => {
         ).revertedWith("Not a member of the game")
       })
 
-      it("Should revert if user trying send commitment second time", async function () {
+      it("Should revert if user trying send commitment second time", async () => {
         const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
 
@@ -77,9 +77,9 @@ describe("GameRPS", () => {
     })
   })
   
-  describe("Reveal", function () {
+  describe("Reveal", () => {
     describe("Success", () => {
-      it("Should emit Reveal event", async function () {
+      it("Should emit Reveal event", async () => {
         const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
 
@@ -92,15 +92,13 @@ describe("GameRPS", () => {
         
         await expect(gameRPS.connect(address1).reveal(gameId, choice, blindingFactor))
           .emit(gameRPS, "Reveal")
-          .withArgs(gameId, address1.address, 1)
+          .withArgs(gameId, address1.address, choice)
       })
     })
 
     describe("Error", () => {
-      it("Should revert if game is not exists", async function () {
+      it("Should revert if game is not exists", async () => {
         const { gameRPS } = await loadFixture(deployGame)
-        // const gameId = await createGame(gameRPS, addresses)
-        // await commitAll(gameRPS, gameId, [address1, address2, address3])
 
         await expect(gameRPS.connect(address1).reveal(
           ethers.utils.randomBytes(32), 
@@ -109,7 +107,7 @@ describe("GameRPS", () => {
         )).revertedWith("Game does not exist")
       })
 
-      it("Should revert if the sender is not a member", async function () {
+      it("Should revert if the sender is not a member", async () => {
         const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
         await commitAll(gameRPS, gameId, [address1, address2, address3])
@@ -119,7 +117,7 @@ describe("GameRPS", () => {
         ).revertedWith("Not a member of the game")
       })
       
-      it("Should revert if not all commitments were added", async function () {
+      it("Should revert if not all commitments were added", async () => {
         const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
         
@@ -130,7 +128,7 @@ describe("GameRPS", () => {
         ).revertedWith("Didn't receive all commitments")
       })
       
-      it("Should revert if the hash is invalid", async function () {
+      it("Should revert if the hash is invalid", async () => {
         const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, addresses)
 

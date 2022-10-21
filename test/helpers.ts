@@ -26,7 +26,7 @@ export async function commit(gameRPS: GameRPS, gameId: string, address: SignerWi
 }
 
 export async function commitAll(gameRPS: GameRPS, gameId: string, addresses: SignerWithAddress[]) {
-    for (const address of addresses) {        
+    for (const address of addresses) {
         await gameRPS.connect(address).commit(gameId, ethers.utils.randomBytes(32))
     }
 }
