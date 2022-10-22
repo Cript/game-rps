@@ -84,11 +84,12 @@ describe("GameRPS", () => {
 
         const choice = 1
         const blindingFactor = ethers.utils.randomBytes(32)
-        const commitment = createCommitment(creator.address, choice, blindingFactor)
+        const commitmentCreator = createCommitment(creator.address, choice, blindingFactor)
 
-        const gameId = await createGame(gameRPS, creator, commitment)
+        const gameId = await createGame(gameRPS, creator, commitmentCreator)
 
-        await join(gameRPS, gameId, address1, 1, ethers.utils.randomBytes(32))
+        const commitmentPlayer = createCommitment(address1.address, 1, ethers.utils.randomBytes(32))
+        await join(gameRPS, gameId, address1, commitmentPlayer)
         
         await expect(gameRPS.connect(creator).reveal(gameId, choice, blindingFactor))
           .emit(gameRPS, "Reveal")
@@ -120,7 +121,8 @@ describe("GameRPS", () => {
         const { gameRPS } = await loadFixture(deployGame)
         const gameId = await createGame(gameRPS, creator, ethers.utils.randomBytes(32))
 
-        await join(gameRPS, gameId, address1, 1, ethers.utils.randomBytes(32))
+        const commitment = createCommitment(address1.address, 1, ethers.utils.randomBytes(32))
+        await join(gameRPS, gameId, address1, commitment)
 
         await expect(
           gameRPS.connect(address1).reveal(gameId, 1, ethers.utils.randomBytes(32))
@@ -129,74 +131,84 @@ describe("GameRPS", () => {
     })
   })
 
-  // describe("Game", () => {
-  //   describe("Success", () => {
-  //     it("should return new game", async () => {
-  //       const { gameRPS } = await loadFixture(deployGame)
-  //       const gameId = await createGame(gameRPS, creator, addresses)
+  describe("Game", () => {
+    describe("Success", () => {
+      it("should return new game", async () => {
+        const { gameRPS } = await loadFixture(deployGame)
 
-  //       const game = await gameRPS.game(gameId)
+        const commitment = createCommitment(creator.address, 1, ethers.utils.randomBytes(32))
+        const gameId = await createGame(gameRPS, creator, commitment)
+
+        const game = await gameRPS.game(gameId)
         
-  //       expect(game[0]).equals(creator.address)
-  //       expect(game[1]).eqls(addresses)
-  //       expect(game[2]).eqls(Array(3).fill(BYTES_32_EMPTY, 0, 3))
-  //       expect(game[3]).eqls(Array(3).fill(0, 0, 3))
-  //     })
+        expect(game[0]).length(1)
+        expect(game[0][0]).equals(creator.address)
 
-  //     it("should return commitments", async () => {
-  //       const { gameRPS } = await loadFixture(deployGame)
-  //       const gameId = await createGame(gameRPS, creator, addresses)
+        expect(game[1]).length(1)
+        expect(game[1][0]).equals(commitment)
 
-  //       await commit(gameRPS, gameId, address1, 2, ethers.utils.randomBytes(32))
+        expect(game[2]).eqls(Array(1).fill(0))
+      })
 
-  //       const game = await gameRPS.game(gameId)
+      it("should return commitments", async () => {
+        const { gameRPS } = await loadFixture(deployGame)
+
+        const commitmentCreator = createCommitment(creator.address, 1, ethers.utils.randomBytes(32))
+        const gameId = await createGame(gameRPS, creator, commitmentCreator)
+
+        const commitmentPlayer = createCommitment(creator.address, 2, ethers.utils.randomBytes(32))
+        await join(gameRPS, gameId, address1, commitmentPlayer)
+
+        const game = await gameRPS.game(gameId)        
         
-  //       expect(game[0]).equals(creator.address)
-  //       expect(game[1]).eqls(addresses)
+        expect(game[0]).length(2)
+        expect(game[0][0]).equals(creator.address)
+        expect(game[0][1]).equals(address1.address)
 
-  //       expect(game[2][0]).not.equals(BYTES_32_EMPTY)
-  //       expect(game[2][1]).equals(BYTES_32_EMPTY)
-  //       expect(game[2][2]).equals(BYTES_32_EMPTY)
+        expect(game[1][0]).equals(commitmentCreator)
+        expect(game[1][1]).equals(commitmentPlayer)
 
-  //       expect(game[3]).eqls(Array(3).fill(0, 0, 3))
-  //     })
+        expect(game[2]).eqls(Array(2).fill(0))
+      })
 
-  //     it("should return reveals", async () => {
-  //       const { gameRPS } = await loadFixture(deployGame)
-  //       const gameId = await createGame(gameRPS, creator, addresses)
+      it("should return reveals", async () => {
+        const { gameRPS } = await loadFixture(deployGame)
+
+        const choiceCreator = 1
+        const blindingFactorCreator = ethers.utils.randomBytes(32)
+        const commitmentCreator = createCommitment(creator.address, choiceCreator, blindingFactorCreator)
+        const gameId = await createGame(gameRPS, creator, commitmentCreator)
+
+        const choicePlayer = 2
+        const blindingFactorPlayer = ethers.utils.randomBytes(32)
+        const commitmentPlayer = createCommitment(address1.address, choicePlayer, blindingFactorPlayer)
+        await join(gameRPS, gameId, address1, commitmentPlayer)
+
+        await gameRPS.connect(creator).reveal(gameId, choiceCreator, blindingFactorCreator)
+        await gameRPS.connect(address1).reveal(gameId, choicePlayer, blindingFactorPlayer)
+
+        const game = await gameRPS.game(gameId)
         
-  //       const choice = 1
-  //       const blindingFactor = ethers.utils.randomBytes(32)
+        expect(game[0]).length(2)
+        expect(game[0][0]).equals(creator.address)
+        expect(game[0][1]).equals(address1.address)
 
-  //       await commit(gameRPS, gameId, address1, choice, blindingFactor)
-  //       await commit(gameRPS, gameId, address2, 1, ethers.utils.randomBytes(32))
-  //       await commit(gameRPS, gameId, address3, 1, ethers.utils.randomBytes(32))
+        expect(game[1][0]).equals(commitmentCreator)
+        expect(game[1][1]).equals(commitmentPlayer)
 
-  //       await gameRPS.connect(address1).reveal(gameId, choice, blindingFactor)
+        expect(game[2][0]).equals(choiceCreator)
+        expect(game[2][1]).equals(choicePlayer)
+      })
+    })
 
-  //       const game = await gameRPS.game(gameId)
-        
-  //       expect(game[0]).equals(creator.address)
-  //       expect(game[1]).eqls(addresses)
+    describe("Error", () => {
+      it("Should revert if game is not exists", async () => {
+        const { gameRPS } = await loadFixture(deployGame)
 
-  //       expect(game[2][0]).not.equals(BYTES_32_EMPTY)
-  //       expect(game[2][1]).not.equals(BYTES_32_EMPTY)
-  //       expect(game[2][2]).not.equals(BYTES_32_EMPTY)        
-
-  //       expect(game[3][0]).equals(1)
-  //       expect(game[3][1]).equals(0)
-  //       expect(game[3][2]).equals(0)
-  //     })
-  //   })
-
-  //   describe("Error", () => {
-  //     it("Should revert if game is not exists", async () => {
-  //       const { gameRPS } = await loadFixture(deployGame)
-
-  //       await expect(
-  //         gameRPS.game(ethers.utils.randomBytes(32))
-  //       ).revertedWith("Game does not exist")
-  //     })
-  //   })
-  // })
+        await expect(
+          gameRPS.game(ethers.utils.randomBytes(32))
+        ).revertedWith("Game does not exist")
+      })
+    })
+  })
 })

@@ -24,8 +24,6 @@ export async function createGame(gameRPS: GameRPS, creator: SignerWithAddress, c
     return gameId;
 }
 
-export async function join(gameRPS: GameRPS, gameId: string, address: SignerWithAddress, choice: number, blindingFactor: Uint8Array) {
-    const commitment = createCommitment(address.address, choice, blindingFactor)
-
+export async function join(gameRPS: GameRPS, gameId: string, address: SignerWithAddress, commitment: BytesLike) {
     await gameRPS.connect(address).join(gameId, commitment)
 }
